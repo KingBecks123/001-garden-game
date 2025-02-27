@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garden Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Point Bar -->
+        <div class="point-bar">
+            <div class="game-title">Sublime Universe #001: Garden Game</div>
+            <div class="points-display">
+                <div id="points">0</div>
+                <div class="win-condition">Reach 1,000,000 to win!</div>
+            </div>
+        </div>
+        
+        <!-- Main Game Area -->
+        <div class="game-area">
+            <!-- Seed Menu -->
+            <div class="seed-menu">
+                <h2>Seeds</h2>
+                <div class="menu-grid" id="seed-grid">
+                    <!-- Seeds will be generated here -->
+                </div>
+            </div>
+            
+            <!-- Garden Grid -->
+            <div class="garden-container">
+                <h2>Garden</h2>
+                <div class="garden-grid" id="garden-grid">
+                    <!-- Garden tiles will be generated here -->
+                </div>
+            </div>
+            
+            <!-- Upgrades Menu -->
+            <div class="upgrades-menu">
+                <h2>Upgrades</h2>
+                <div class="menu-grid" id="upgrades-grid">
+                    <!-- Upgrades will be generated here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings -->
+        <div class="settings">
+            <button id="mute-music">Mute Music</button>
+            <button id="mute-sfx">Mute SFX</button>
+            <button id="delete-save">Delete Save</button>
+        </div>
+    </div>
+    
+    <!-- Tooltip -->
+    <div id="tooltip" class="tooltip"></div>
+    
+    <script src="game.js"></script>
+</body>
+</html> 
