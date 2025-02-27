@@ -15,7 +15,8 @@ let gameState = {
     lastSave: Date.now(),
     settings: {
         mutedMusic: false,
-        mutedSFX: false
+        mutedSFX: false,
+        darkMode: false
     },
     isDragging: false,
     isRemoving: false
@@ -111,11 +112,16 @@ const muteMusic = document.getElementById('mute-music');
 const muteSFX = document.getElementById('mute-sfx');
 const deleteSave = document.getElementById('delete-save');
 const infoButton = document.getElementById('info-button');
+const themeToggle = document.getElementById('theme-toggle');
 const pointsPerSecondDisplay = document.getElementById('points-per-second');
 
 // Initialize the game
 function initGame() {
     loadGame();
+    // Force theme button update after DOM is ready
+    setTimeout(() => {
+        applyTheme();
+    }, 0);
     createGardenGrid();
     createSeedMenu();
     createUpgradeMenu();
@@ -133,6 +139,19 @@ function initGame() {
         gameState.isDragging = false;
         gameState.isRemoving = false;
     });
+}
+
+// Apply the current theme (light/dark)
+function applyTheme() {
+    if (gameState.settings.darkMode) {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = 'L';
+        themeToggle.title = 'Switch to Light Mode';
+    } else {
+        document.body.classList.remove('dark-mode');
+        themeToggle.textContent = 'D';
+        themeToggle.title = 'Switch to Dark Mode';
+    }
 }
 
 // Game loop - runs every second
@@ -363,67 +382,12 @@ function createGardenGrid() {
         tile.addEventListener('mouseenter', () => {
             if (gameState.gardenGrid[i]) {
                 const plant = gameState.gardenGrid[i];
-                const plantType = plantTypes[plant.type];
+                displayPlantTooltip(i, plant, tile);
                 
                 // Collect limes when hovering over a basket
                 if (plant.type === 'basket' && plant.limes && plant.limes > 0) {
                     collectLimesFromBasket(i);
                 }
-                
-                let description = plantType.description;
-                
-                // For plants that produce points, show actual points per second (including pond boosts)
-                if (plant.type === 'limeBush' || plant.type === 'limeTree') {
-                    let actualPointsPerSecond = plantType.basePointsPerSecond;
-                    const adjacentTiles = getAdjacentTiles(i);
-                    
-                    // Count adjacent ponds
-                    let pondBoost = 0;
-                    for (const adjTile of adjacentTiles) {
-                        if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'pond') {
-                            pondBoost += 1;
-                        }
-                    }
-                    
-                    actualPointsPerSecond += pondBoost;
-                    description = `Earns ${formatNumber(actualPointsPerSecond)} points / second`;
-                    
-                    if (pondBoost > 0) {
-                        description += ` (includes +${pondBoost} from ponds)`;
-                    }
-                }
-                // For baskets, update description to show market effects
-                else if (plant.type === 'basket') {
-                    const adjacentTiles = getAdjacentTiles(i);
-                    let marketBoost = 0;
-                    
-                    for (const adjTile of adjacentTiles) {
-                        if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'market') {
-                            marketBoost += 1;
-                        }
-                    }
-                    
-                    const pointsPerLime = 5 + marketBoost;
-                    description = `When placed next to a lime tree, collects 1 lime per second. Hover over to collect all limes. Each lime gives +${pointsPerLime} points. Maximum of ${formatNumber(plantTypes.basket.maxLimes)} limes.`;
-                    
-                    if (marketBoost > 0) {
-                        description += ` (includes +${marketBoost} from markets)`;
-                    }
-                }
-                
-                // For baskets, show current lime count
-                let extraInfo = null;
-                if (plant.type === 'basket') {
-                    if (!plant.limes) plant.limes = 0;
-                    extraInfo = `Limes: ${formatNumber(plant.limes)}/${formatNumber(plantTypes.basket.maxLimes)}`;
-                }
-                
-                showTooltip(
-                    plantType.name,
-                    description,
-                    extraInfo,
-                    tile
-                );
             }
         });
         
@@ -433,6 +397,65 @@ function createGardenGrid() {
         
         gardenGrid.appendChild(tile);
     }
+}
+
+// Helper function to display plant tooltip - consolidates tooltip logic
+function displayPlantTooltip(tileIndex, plant, targetElement) {
+    const plantType = plantTypes[plant.type];
+    let description = plantType.description;
+    
+    // For plants that produce points, show actual points per second (including pond boosts)
+    if (plant.type === 'limeBush' || plant.type === 'limeTree') {
+        let actualPointsPerSecond = plantType.basePointsPerSecond;
+        const adjacentTiles = getAdjacentTiles(tileIndex);
+        
+        // Count adjacent ponds
+        let pondBoost = 0;
+        for (const adjTile of adjacentTiles) {
+            if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'pond') {
+                pondBoost += 1;
+            }
+        }
+        
+        actualPointsPerSecond += pondBoost;
+        description = `Earns ${formatNumber(actualPointsPerSecond)} points / second`;
+        
+        if (pondBoost > 0) {
+            description += ` (includes +${pondBoost} from ponds)`;
+        }
+    }
+    // For baskets, update description to show market effects
+    else if (plant.type === 'basket') {
+        const adjacentTiles = getAdjacentTiles(tileIndex);
+        let marketBoost = 0;
+        
+        for (const adjTile of adjacentTiles) {
+            if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'market') {
+                marketBoost += 1;
+            }
+        }
+        
+        const pointsPerLime = 5 + marketBoost;
+        description = `When placed next to a lime tree, collects 1 lime per second. Hover over to collect all limes. Each lime gives +${pointsPerLime} points. Maximum of ${formatNumber(plantTypes.basket.maxLimes)} limes.`;
+        
+        if (marketBoost > 0) {
+            description += ` (includes +${marketBoost} from markets)`;
+        }
+    }
+    
+    // For baskets, show current lime count
+    let extraInfo = null;
+    if (plant.type === 'basket') {
+        if (!plant.limes) plant.limes = 0;
+        extraInfo = `Limes: ${formatNumber(plant.limes)}/${formatNumber(plantTypes.basket.maxLimes)}`;
+    }
+    
+    showTooltip(
+        plantType.name,
+        description,
+        extraInfo,
+        targetElement
+    );
 }
 
 // Collect limes from a basket
@@ -616,6 +639,30 @@ function setupEventListeners() {
         }
     });
     
+    // Theme toggle button
+    themeToggle.addEventListener('click', () => {
+        gameState.settings.darkMode = !gameState.settings.darkMode;
+        applyTheme();
+        playSFX('click');
+        saveGame();
+    });
+    
+    // Theme toggle tooltip
+    themeToggle.addEventListener('mouseenter', () => {
+        showTooltip(
+            "Theme",
+            gameState.settings.darkMode ? 
+                "Switch to light mode" : 
+                "Switch to dark mode",
+            null,
+            themeToggle
+        );
+    });
+    
+    themeToggle.addEventListener('mouseleave', () => {
+        hideTooltip();
+    });
+    
     // Info button tooltip
     infoButton.addEventListener('mouseenter', () => {
         const controlsInfo = `
@@ -662,62 +709,8 @@ function updateTooltip() {
         // If it's a garden tile with a plant
         if (tileIndex !== undefined && gameState.gardenGrid[tileIndex]) {
             const plant = gameState.gardenGrid[tileIndex];
-            const plantType = plantTypes[plant.type];
-            
-            let description = plantType.description;
-            
-            // For plants that produce points, show actual points per second (including pond boosts)
-            if (plant.type === 'limeBush' || plant.type === 'limeTree') {
-                let actualPointsPerSecond = plantType.basePointsPerSecond;
-                const adjacentTiles = getAdjacentTiles(tileIndex);
-                
-                // Count adjacent ponds
-                let pondBoost = 0;
-                for (const adjTile of adjacentTiles) {
-                    if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'pond') {
-                        pondBoost += 1;
-                    }
-                }
-                
-                actualPointsPerSecond += pondBoost;
-                description = `Earns ${formatNumber(actualPointsPerSecond)} points / second`;
-                
-                if (pondBoost > 0) {
-                    description += ` (includes +${pondBoost} from ponds)`;
-                }
-            }
-            // For baskets, update description to show market effects
-            else if (plant.type === 'basket') {
-                const adjacentTiles = getAdjacentTiles(tileIndex);
-                let marketBoost = 0;
-                
-                for (const adjTile of adjacentTiles) {
-                    if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'market') {
-                        marketBoost += 1;
-                    }
-                }
-                
-                const pointsPerLime = 5 + marketBoost;
-                description = `When placed next to a lime tree, collects 1 lime per second. Hover over to collect all limes. Each lime gives +${pointsPerLime} points. Maximum of ${formatNumber(plantTypes.basket.maxLimes)} limes.`;
-                
-                if (marketBoost > 0) {
-                    description += ` (includes +${marketBoost} from markets)`;
-                }
-            }
-            
-            // For baskets, show current lime count
-            let extraInfo = null;
-            if (plant.type === 'basket') {
-                if (!plant.limes) plant.limes = 0;
-                extraInfo = `Limes: ${formatNumber(plant.limes)}/${formatNumber(plantTypes.basket.maxLimes)}`;
-            }
-            
-            // Update tooltip content
-            tooltip.innerHTML = `
-                <div class="tooltip-title">${plantType.name}</div>
-                <div class="tooltip-description">${description}</div>
-                ${extraInfo ? `<div class="tooltip-price">${extraInfo}</div>` : ''}
-            `;
+            // Just call our consolidated displayPlantTooltip function 
+            displayPlantTooltip(parseInt(tileIndex), plant, tooltip.targetElement);
         }
         
         // For seed items, we don't need to update as the prices don't change during hover

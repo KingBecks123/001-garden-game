@@ -342,4 +342,112 @@ html, body {
 .info-btn:hover {
     transform: scale(1.1);
     background-color: #5a7c9f !important;
+}
+
+/* Dark mode styles */
+body.dark-mode {
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #1f2935);
+    color: #eee;
+}
+
+body.dark-mode .game-container {
+    background-color: rgba(30, 30, 40, 0.8);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .point-bar,
+body.dark-mode .seed-menu,
+body.dark-mode .upgrades-menu {
+    background-color: rgba(40, 40, 50, 0.9);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .garden-grid {
+    background-color: #2a2a3a;
+}
+
+body.dark-mode .garden-tile {
+    background-color: #333;
+    border: 1px solid #444;
+}
+
+body.dark-mode .garden-tile:hover {
+    background-color: #3a3a4a;
+}
+
+body.dark-mode .garden-tile.basket-full {
+    background-color: #4d4d20;
+    box-shadow: 0 0 10px rgba(180, 160, 0, 0.5);
+}
+
+body.dark-mode .seed-item,
+body.dark-mode .upgrade-item {
+    background-color: #333;
+    color: #eee;
+    border: 1px solid #444;
+}
+
+body.dark-mode .seed-item.affordable,
+body.dark-mode .upgrade-item.affordable {
+    background-color: #2a3a2a;
+    border: 1px solid #3c5c3c;
+}
+
+body.dark-mode .seed-item.not-affordable,
+body.dark-mode .upgrade-item.not-affordable {
+    background-color: #3a2a2a;
+    border: 1px solid #5c3c3c;
+}
+
+body.dark-mode .seed-item.locked {
+    background-color: #2a2a2a;
+    border-color: #3a3a3a;
+}
+
+body.dark-mode .seed-item.selected {
+    border: 2px solid #6c8;
+    box-shadow: 0 0 10px rgba(80, 200, 120, 0.3);
+}
+
+body.dark-mode .tooltip {
+    background-color: #333;
+    color: #eee;
+    border: 1px solid #444;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .tooltip-title {
+    background-color: #444;
+    color: #fff;
+}
+
+body.dark-mode .tooltip-description {
+    color: #ccc;
+}
+
+body.dark-mode .tooltip-price {
+    color: #8aacdf;
+}
+
+body.dark-mode #points,
+body.dark-mode .points-per-second,
+body.dark-mode h2 {
+    color: #8aacdf;
+}
+
+body.dark-mode .win-condition {
+    color: #aaa;
+}
+
+body.dark-mode .settings button {
+    background-color: #3a3a4a;
+    color: #ddd;
+}
+
+body.dark-mode .settings button:hover {
+    background-color: #444454;
+}
+
+body.dark-mode #notification {
+    background-color: rgba(60, 120, 80, 0.9);
 } 
