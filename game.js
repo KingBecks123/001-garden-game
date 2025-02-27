@@ -1,6 +1,7 @@
 // Game state
 let gameState = {
     points: 0,
+    pointsPerSecond: 0,
     selectedSeed: null,
     plants: [],
     gardenGrid: Array(25).fill(null),
@@ -61,6 +62,7 @@ const tooltip = document.getElementById('tooltip');
 const muteMusic = document.getElementById('mute-music');
 const muteSFX = document.getElementById('mute-sfx');
 const deleteSave = document.getElementById('delete-save');
+const pointsPerSecondDisplay = document.getElementById('points-per-second');
 
 // Initialize the game
 function initGame() {
@@ -113,6 +115,9 @@ function calculatePointsPerSecond() {
             pointsPerSecond += plantPoints;
         }
     }
+    
+    // Store the points per second value
+    gameState.pointsPerSecond = pointsPerSecond;
     
     // Add the points to the total
     gameState.points += pointsPerSecond;
@@ -397,6 +402,9 @@ function hideTooltip() {
 function updateUI() {
     // Update points display
     pointsDisplay.textContent = Math.floor(gameState.points);
+    
+    // Update points per second display
+    pointsPerSecondDisplay.textContent = `${gameState.pointsPerSecond} points/second`;
     
     // Update seed menu affordability
     createSeedMenu();

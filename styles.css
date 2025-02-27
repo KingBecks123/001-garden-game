@@ -121,6 +121,14 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
+.points-per-second {
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #6a8caf;
+    text-align: center;
+}
+
 /* Garden Tiles */
 .garden-tile {
     aspect-ratio: 1;
