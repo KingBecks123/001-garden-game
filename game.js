@@ -8,7 +8,8 @@ let gameState = {
     unlocked: {
         limeBush: true,
         limeTree: false,
-        pond: false
+        pond: false,
+        basket: false
     },
     lastSave: Date.now(),
     settings: {
@@ -16,6 +17,31 @@ let gameState = {
         mutedSFX: false
     }
 };
+
+// Sound effects
+const soundEffects = {
+    click: new Audio('sfx/click.mp3'),
+    remove: new Audio('sfx/remove.mp3'),
+    basketFull: new Audio('sfx/basket_full.mp3')
+};
+
+// Play a sound effect
+function playSFX(sfxName) {
+    if (!gameState.settings.mutedSFX && soundEffects[sfxName]) {
+        // Create a new audio element to allow overlapping sounds
+        const sound = soundEffects[sfxName].cloneNode();
+        sound.volume = 0.5; // Adjust volume as needed
+        sound.play().catch(err => {
+            // Ignore errors - browser might block autoplay
+            console.log('Audio playback error:', err);
+        });
+    }
+}
+
+// Helper function to format numbers with commas
+function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
 
 // Plant definitions
 const plantTypes = {
@@ -45,6 +71,16 @@ const plantTypes = {
         unlockCondition: 1000,
         basePointsPerSecond: 0,
         image: 'images/pond.svg'
+    },
+    basket: {
+        id: 'basket',
+        name: 'Basket',
+        description: 'When placed next to a lime tree, collects 1 lime per second. Click to collect all limes. Each lime gives +5 points. Maximum of 100 limes.',
+        price: 1000,
+        unlockCondition: 10000,
+        basePointsPerSecond: 0,
+        maxLimes: 100,
+        image: 'images/basket.svg'
     }
 };
 
@@ -84,12 +120,15 @@ function initGame() {
 function gameLoop() {
     calculatePointsPerSecond();
     updateUI();
+    updateTooltip();
     checkUnlocks();
 }
 
 // Calculate points earned per second
 function calculatePointsPerSecond() {
     let pointsPerSecond = 0;
+    let needsGardenUpdate = false;
+    let basketBecameFull = false;
     
     // Process each plant in the garden
     for (let i = 0; i < gameState.gardenGrid.length; i++) {
@@ -109,10 +148,46 @@ function calculatePointsPerSecond() {
                         plantPoints += 1; // Pond boosts lime plants by +1 point/sec
                     }
                 }
+            } else if (plant.type === 'basket') {
+                // Add limes to basket from adjacent lime trees
+                const adjacentTiles = getAdjacentTiles(i);
+                let limesCollected = 0;
+                
+                for (const adjTile of adjacentTiles) {
+                    if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'limeTree') {
+                        limesCollected += 1;
+                    }
+                }
+                
+                // Initialize limes property if it doesn't exist
+                if (!plant.limes) plant.limes = 0;
+                
+                const wasBeforeMax = plant.limes < plantTypes.basket.maxLimes;
+                
+                // Add limes up to the maximum
+                const maxLimes = plantTypes.basket.maxLimes;
+                const newLimeCount = Math.min(plant.limes + limesCollected, maxLimes);
+                plant.limes = newLimeCount;
+                
+                // Check if basket just became full
+                if (wasBeforeMax && plant.limes >= maxLimes) {
+                    needsGardenUpdate = true;
+                    basketBecameFull = true;
+                }
             }
             
             // Add this plant's contribution
             pointsPerSecond += plantPoints;
+        }
+    }
+    
+    // Update garden grid if any basket became full
+    if (needsGardenUpdate) {
+        createGardenGrid();
+        
+        // Play a sound if a basket became full
+        if (basketBecameFull) {
+            playSFX('basketFull');
         }
     }
     
@@ -158,6 +233,13 @@ function checkUnlocks() {
         gameState.unlocked.pond = true;
         unlockHappened = true;
         newlyUnlocked.push(plantTypes.pond.name);
+    }
+    
+    // Check if we have enough points to unlock the Basket
+    if (!gameState.unlocked.basket && gameState.points >= plantTypes.basket.unlockCondition) {
+        gameState.unlocked.basket = true;
+        unlockHappened = true;
+        newlyUnlocked.push(plantTypes.basket.name);
     }
     
     // Only refresh the seed menu if something was unlocked
@@ -210,6 +292,11 @@ function createGardenGrid() {
             plantImg.alt = plantTypes[plant.type].name;
             plantImg.className = 'item-icon';
             
+            // For baskets, show visual indication when full
+            if (plant.type === 'basket' && plant.limes >= plantTypes.basket.maxLimes) {
+                tile.classList.add('basket-full');
+            }
+            
             tile.appendChild(plantImg);
         }
         
@@ -226,10 +313,40 @@ function createGardenGrid() {
                 const plant = gameState.gardenGrid[i];
                 const plantType = plantTypes[plant.type];
                 
+                let description = plantType.description;
+                
+                // For plants that produce points, show actual points per second (including pond boosts)
+                if (plant.type === 'limeBush' || plant.type === 'limeTree') {
+                    let actualPointsPerSecond = plantType.basePointsPerSecond;
+                    const adjacentTiles = getAdjacentTiles(i);
+                    
+                    // Count adjacent ponds
+                    let pondBoost = 0;
+                    for (const adjTile of adjacentTiles) {
+                        if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'pond') {
+                            pondBoost += 1;
+                        }
+                    }
+                    
+                    actualPointsPerSecond += pondBoost;
+                    description = `Earns ${formatNumber(actualPointsPerSecond)} points / second`;
+                    
+                    if (pondBoost > 0) {
+                        description += ` (includes +${pondBoost} from ponds)`;
+                    }
+                }
+                
+                // For baskets, show current lime count
+                let extraInfo = null;
+                if (plant.type === 'basket') {
+                    if (!plant.limes) plant.limes = 0;
+                    extraInfo = `Limes: ${formatNumber(plant.limes)}/${formatNumber(plantTypes.basket.maxLimes)}`;
+                }
+                
                 showTooltip(
                     plantType.name,
-                    plantType.description,
-                    null,
+                    description,
+                    extraInfo,
                     tile
                 );
             }
@@ -296,7 +413,7 @@ function createSeedMenu() {
                 showTooltip(
                     plant.name,
                     plant.description,
-                    `Price: ${plant.price} points`,
+                    `Price: ${formatNumber(plant.price)} points`,
                     seedItem
                 );
             });
@@ -318,15 +435,32 @@ function createUpgradeMenu() {
 
 // Handle clicking on a garden tile
 function handleTileClick(tileIndex) {
+    // Check if there's a plant in this tile
+    if (gameState.gardenGrid[tileIndex]) {
+        const plant = gameState.gardenGrid[tileIndex];
+        
+        // If this is a basket, collect the limes
+        if (plant.type === 'basket' && plant.limes && plant.limes > 0) {
+            const limesToCollect = plant.limes;
+            const pointsToAdd = limesToCollect * 5; // Changed from 10 to 5 points per lime
+            gameState.points += pointsToAdd;
+            plant.limes = 0;
+            showNotification(`Collected ${formatNumber(limesToCollect)} limes for ${formatNumber(pointsToAdd)} points!`);
+            playSFX('click');
+            createGardenGrid();
+            updateUI();
+            return;
+        }
+        
+        // For other plants, tile is occupied, do nothing
+        return;
+    }
+    
     // Check if we have a selected seed
     if (!gameState.selectedSeed) return;
     
-    // Check if the tile is already occupied
-    if (gameState.gardenGrid[tileIndex]) return;
-    
-    const selectedPlant = plantTypes[gameState.selectedSeed];
-    
     // Check if we can afford the plant
+    const selectedPlant = plantTypes[gameState.selectedSeed];
     if (gameState.points < selectedPlant.price) return;
     
     // Place the plant
@@ -335,6 +469,14 @@ function handleTileClick(tileIndex) {
         type: gameState.selectedSeed,
         plantedAt: Date.now()
     };
+    
+    // Initialize limes for basket
+    if (gameState.selectedSeed === 'basket') {
+        gameState.gardenGrid[tileIndex].limes = 0;
+    }
+    
+    // Play sound effect
+    playSFX('click');
     
     // Update the UI
     createGardenGrid();
@@ -349,6 +491,9 @@ function handleTileRightClick(tileIndex) {
     // Remove the plant
     gameState.gardenGrid[tileIndex] = null;
     
+    // Play sound effect
+    playSFX('remove');
+    
     // Update the UI
     createGardenGrid();
     updateUI();
@@ -362,6 +507,9 @@ function selectSeed(plantId) {
     } else {
         gameState.selectedSeed = plantId;
     }
+    
+    // Play sound effect
+    playSFX('click');
     
     // Update the UI
     createSeedMenu();
@@ -383,6 +531,9 @@ function showTooltip(title, description, price, targetElement) {
     tooltip.style.left = `${rect.right + 10}px`;
     tooltip.style.top = `${rect.top}px`;
     
+    // Assign the target element to the tooltip for dynamic updates
+    tooltip.targetElement = targetElement;
+    
     // Adjust if the tooltip goes off-screen
     const tooltipRect = tooltip.getBoundingClientRect();
     if (tooltipRect.right > window.innerWidth) {
@@ -401,10 +552,10 @@ function hideTooltip() {
 // Update UI elements
 function updateUI() {
     // Update points display
-    pointsDisplay.textContent = Math.floor(gameState.points);
+    pointsDisplay.textContent = formatNumber(Math.floor(gameState.points));
     
     // Update points per second display
-    pointsPerSecondDisplay.textContent = `${gameState.pointsPerSecond} points/second`;
+    pointsPerSecondDisplay.textContent = `${formatNumber(gameState.pointsPerSecond)} points/second`;
     
     // Update seed menu affordability
     createSeedMenu();
@@ -415,17 +566,26 @@ function setupEventListeners() {
     muteMusic.addEventListener('click', () => {
         gameState.settings.mutedMusic = !gameState.settings.mutedMusic;
         muteMusic.textContent = gameState.settings.mutedMusic ? 'Unmute Music' : 'Mute Music';
+        playSFX('click');
     });
     
     muteSFX.addEventListener('click', () => {
         gameState.settings.mutedSFX = !gameState.settings.mutedSFX;
         muteSFX.textContent = gameState.settings.mutedSFX ? 'Unmute SFX' : 'Mute SFX';
+        
+        // Play a click sound if we're unmuting
+        if (!gameState.settings.mutedSFX) {
+            playSFX('click');
+        }
     });
     
     deleteSave.addEventListener('click', () => {
         if (confirm('Are you sure you want to delete your save and start over?')) {
             localStorage.removeItem('gardenGameSave');
+            playSFX('click');
             location.reload();
+        } else {
+            playSFX('click');
         }
     });
 }
@@ -441,6 +601,59 @@ function loadGame() {
     const savedGame = localStorage.getItem('gardenGameSave');
     if (savedGame) {
         gameState = JSON.parse(savedGame);
+    }
+}
+
+// Update tooltip if currently shown
+function updateTooltip() {
+    // Check if there's an active tooltip
+    if (tooltip.style.display === 'block' && tooltip.targetElement) {
+        const tileIndex = tooltip.targetElement.dataset.index;
+        
+        // If it's a garden tile with a plant
+        if (tileIndex !== undefined && gameState.gardenGrid[tileIndex]) {
+            const plant = gameState.gardenGrid[tileIndex];
+            const plantType = plantTypes[plant.type];
+            
+            let description = plantType.description;
+            
+            // For plants that produce points, show actual points per second (including pond boosts)
+            if (plant.type === 'limeBush' || plant.type === 'limeTree') {
+                let actualPointsPerSecond = plantType.basePointsPerSecond;
+                const adjacentTiles = getAdjacentTiles(tileIndex);
+                
+                // Count adjacent ponds
+                let pondBoost = 0;
+                for (const adjTile of adjacentTiles) {
+                    if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'pond') {
+                        pondBoost += 1;
+                    }
+                }
+                
+                actualPointsPerSecond += pondBoost;
+                description = `Earns ${formatNumber(actualPointsPerSecond)} points / second`;
+                
+                if (pondBoost > 0) {
+                    description += ` (includes +${pondBoost} from ponds)`;
+                }
+            }
+            
+            // For baskets, show current lime count
+            let extraInfo = null;
+            if (plant.type === 'basket') {
+                if (!plant.limes) plant.limes = 0;
+                extraInfo = `Limes: ${formatNumber(plant.limes)}/${formatNumber(plantTypes.basket.maxLimes)}`;
+            }
+            
+            // Update tooltip content
+            tooltip.innerHTML = `
+                <div class="tooltip-title">${plantType.name}</div>
+                <div class="tooltip-description">${description}</div>
+                ${extraInfo ? `<div class="tooltip-price">${extraInfo}</div>` : ''}
+            `;
+        }
+        
+        // For seed items, we don't need to update as the prices don't change during hover
     }
 }
 
