@@ -16,7 +16,9 @@ let gameState = {
     settings: {
         mutedMusic: false,
         mutedSFX: false
-    }
+    },
+    isDragging: false,
+    isRemoving: false
 };
 
 // Sound effects
@@ -76,7 +78,7 @@ const plantTypes = {
     basket: {
         id: 'basket',
         name: 'Basket',
-        description: 'When placed next to a lime tree, collects 1 lime per second. Click to collect all limes. Each lime gives +5 points. Maximum of 100 limes.',
+        description: 'When placed next to a lime tree, collects 1 lime per second. Hover over to collect all limes. Each lime gives +5 points. Maximum of 100 limes.',
         price: 1000,
         unlockCondition: 10000,
         basePointsPerSecond: 0,
@@ -88,7 +90,7 @@ const plantTypes = {
         name: 'Market',
         description: 'When placed next to a basket, increases the points per lime by 1.',
         price: 10000,
-        unlockCondition: 100000,
+        unlockCondition: 20000,
         basePointsPerSecond: 0,
         image: 'images/market.svg'
     }
@@ -108,6 +110,7 @@ const tooltip = document.getElementById('tooltip');
 const muteMusic = document.getElementById('mute-music');
 const muteSFX = document.getElementById('mute-sfx');
 const deleteSave = document.getElementById('delete-save');
+const infoButton = document.getElementById('info-button');
 const pointsPerSecondDisplay = document.getElementById('points-per-second');
 
 // Initialize the game
@@ -124,6 +127,12 @@ function initGame() {
     
     // Save the game every 2 seconds
     setInterval(saveGame, 2000);
+    
+    // Add mouse up event to stop dragging
+    document.addEventListener('mouseup', () => {
+        gameState.isDragging = false;
+        gameState.isRemoving = false;
+    });
 }
 
 // Game loop - runs every second
@@ -265,7 +274,7 @@ function checkUnlocks() {
         
         // Show notification for newly unlocked plants
         newlyUnlocked.forEach(plantName => {
-            showNotification(`New seed unlocked: ${plantName}!`);
+            showNotification(`New item unlocked: ${plantName}!`);
         });
     }
 }
@@ -318,10 +327,36 @@ function createGardenGrid() {
         }
         
         // Add event listeners for placing plants
-        tile.addEventListener('click', () => handleTileClick(i));
+        tile.addEventListener('click', (e) => {
+            if (!e.shiftKey) {
+                handleTileClick(i);
+            }
+        });
+        
         tile.addEventListener('contextmenu', (e) => {
+            // Always prevent default context menu behavior
             e.preventDefault();
             handleTileRightClick(i);
+        });
+        
+        // Mouse down event for drag planting
+        tile.addEventListener('mousedown', (e) => {
+            if (e.shiftKey && e.button === 0) { // Left button + shift
+                gameState.isDragging = true;
+                gameState.isRemoving = false;
+                handleTileClick(i);
+            }
+        });
+        
+        // Mouse over event for drag planting/removing
+        tile.addEventListener('mouseover', (e) => {
+            if (gameState.isDragging) {
+                if (gameState.isRemoving) {
+                    handleTileRightClick(i);
+                } else {
+                    handleTileClick(i);
+                }
+            }
         });
         
         // Hover events for showing information
@@ -355,6 +390,24 @@ function createGardenGrid() {
                     
                     if (pondBoost > 0) {
                         description += ` (includes +${pondBoost} from ponds)`;
+                    }
+                }
+                // For baskets, update description to show market effects
+                else if (plant.type === 'basket') {
+                    const adjacentTiles = getAdjacentTiles(i);
+                    let marketBoost = 0;
+                    
+                    for (const adjTile of adjacentTiles) {
+                        if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'market') {
+                            marketBoost += 1;
+                        }
+                    }
+                    
+                    const pointsPerLime = 5 + marketBoost;
+                    description = `When placed next to a lime tree, collects 1 lime per second. Hover over to collect all limes. Each lime gives +${pointsPerLime} points. Maximum of ${formatNumber(plantTypes.basket.maxLimes)} limes.`;
+                    
+                    if (marketBoost > 0) {
+                        description += ` (includes +${marketBoost} from markets)`;
                     }
                 }
                 
@@ -562,6 +615,28 @@ function setupEventListeners() {
             playSFX('click');
         }
     });
+    
+    // Info button tooltip
+    infoButton.addEventListener('mouseenter', () => {
+        const controlsInfo = `
+            • Click an item in the menu to select it<br>
+            • Click a garden tile to place the selected item<br>
+            • Right-click to remove an item<br>
+            • Shift + drag (left click) to place multiple items<br>
+            • Hover over special items to collect resources
+        `;
+        
+        showTooltip(
+            "Game Controls",
+            controlsInfo,
+            null,
+            infoButton
+        );
+    });
+    
+    infoButton.addEventListener('mouseleave', () => {
+        hideTooltip();
+    });
 }
 
 // Save the game
@@ -611,6 +686,24 @@ function updateTooltip() {
                     description += ` (includes +${pondBoost} from ponds)`;
                 }
             }
+            // For baskets, update description to show market effects
+            else if (plant.type === 'basket') {
+                const adjacentTiles = getAdjacentTiles(tileIndex);
+                let marketBoost = 0;
+                
+                for (const adjTile of adjacentTiles) {
+                    if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'market') {
+                        marketBoost += 1;
+                    }
+                }
+                
+                const pointsPerLime = 5 + marketBoost;
+                description = `When placed next to a lime tree, collects 1 lime per second. Hover over to collect all limes. Each lime gives +${pointsPerLime} points. Maximum of ${formatNumber(plantTypes.basket.maxLimes)} limes.`;
+                
+                if (marketBoost > 0) {
+                    description += ` (includes +${marketBoost} from markets)`;
+                }
+            }
             
             // For baskets, show current lime count
             let extraInfo = null;
@@ -634,6 +727,20 @@ function updateTooltip() {
 // Create the seed menu
 function createSeedMenu() {
     seedGrid.innerHTML = '';
+    
+    // Determine the next item to unlock for tooltip hint
+    let nextItemToUnlock = null;
+    let lowestUnlockPoints = Infinity;
+    
+    for (const plantId in plantTypes) {
+        if (!gameState.unlocked[plantId]) {
+            const unlockPoints = plantTypes[plantId].unlockCondition;
+            if (unlockPoints < lowestUnlockPoints) {
+                lowestUnlockPoints = unlockPoints;
+                nextItemToUnlock = plantId;
+            }
+        }
+    }
     
     // Add all plants to the menu (not just unlocked ones)
     for (const plantId in plantTypes) {
@@ -678,8 +785,9 @@ function createSeedMenu() {
             }
         });
         
-        // Hover events for showing information (only for unlocked seeds)
+        // Hover events for showing information
         if (isUnlocked) {
+            // For unlocked items
             seedItem.addEventListener('mouseenter', () => {
                 showTooltip(
                     plant.name,
@@ -688,11 +796,21 @@ function createSeedMenu() {
                     seedItem
                 );
             });
-            
-            seedItem.addEventListener('mouseleave', () => {
-                hideTooltip();
+        } else if (plantId === nextItemToUnlock) {
+            // For the next item to unlock
+            seedItem.addEventListener('mouseenter', () => {
+                showTooltip(
+                    "Locked Item",
+                    "Reach the required points to unlock this item.",
+                    `Required: ${formatNumber(plant.unlockCondition)} points`,
+                    seedItem
+                );
             });
         }
+        
+        seedItem.addEventListener('mouseleave', () => {
+            hideTooltip();
+        });
         
         seedGrid.appendChild(seedItem);
     }
