@@ -10,11 +10,15 @@
     --cant-afford-color: #ffcfd2;
 }
 
+/* Import Atkinson Hyperlegible Mono font */
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible&display=swap');
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+    font-family: 'Atkinson Hyperlegible', monospace;
+    font-weight: 200;
 }
 
 body {

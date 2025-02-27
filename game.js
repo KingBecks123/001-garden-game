@@ -9,7 +9,8 @@ let gameState = {
         limeBush: true,
         limeTree: false,
         pond: false,
-        basket: false
+        basket: false,
+        market: false
     },
     lastSave: Date.now(),
     settings: {
@@ -81,6 +82,15 @@ const plantTypes = {
         basePointsPerSecond: 0,
         maxLimes: 100,
         image: 'images/basket.svg'
+    },
+    market: {
+        id: 'market',
+        name: 'Market',
+        description: 'When placed next to a basket, increases the points per lime by 1.',
+        price: 10000,
+        unlockCondition: 100000,
+        basePointsPerSecond: 0,
+        image: 'images/market.svg'
     }
 };
 
@@ -242,6 +252,13 @@ function checkUnlocks() {
         newlyUnlocked.push(plantTypes.basket.name);
     }
     
+    // Check if we have enough points to unlock the Market
+    if (!gameState.unlocked.market && gameState.points >= plantTypes.market.unlockCondition) {
+        gameState.unlocked.market = true;
+        unlockHappened = true;
+        newlyUnlocked.push(plantTypes.market.name);
+    }
+    
     // Only refresh the seed menu if something was unlocked
     if (unlockHappened) {
         createSeedMenu();
@@ -313,6 +330,11 @@ function createGardenGrid() {
                 const plant = gameState.gardenGrid[i];
                 const plantType = plantTypes[plant.type];
                 
+                // Collect limes when hovering over a basket
+                if (plant.type === 'basket' && plant.limes && plant.limes > 0) {
+                    collectLimesFromBasket(i);
+                }
+                
                 let description = plantType.description;
                 
                 // For plants that produce points, show actual points per second (including pond boosts)
@@ -360,77 +382,36 @@ function createGardenGrid() {
     }
 }
 
-// Create the seed menu
-function createSeedMenu() {
-    seedGrid.innerHTML = '';
+// Collect limes from a basket
+function collectLimesFromBasket(tileIndex) {
+    const plant = gameState.gardenGrid[tileIndex];
+    if (!plant || plant.type !== 'basket' || !plant.limes || plant.limes <= 0) return;
     
-    // Add all plants to the menu (not just unlocked ones)
-    for (const plantId in plantTypes) {
-        const plant = plantTypes[plantId];
-        const isUnlocked = gameState.unlocked[plantId];
-        
-        const seedItem = document.createElement('div');
-        seedItem.className = 'seed-item';
-        seedItem.dataset.plantId = plantId;
-        
-        // Apply the appropriate class based on unlock status
-        if (!isUnlocked) {
-            seedItem.classList.add('locked');
-        } else if (plant.price <= gameState.points) {
-            seedItem.classList.add('affordable');
-        } else {
-            seedItem.classList.add('not-affordable');
+    // Calculate points per lime (base of 5)
+    let pointsPerLime = 5;
+    
+    // Check for adjacent markets
+    const adjacentTiles = getAdjacentTiles(tileIndex);
+    for (const adjTile of adjacentTiles) {
+        if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'market') {
+            pointsPerLime += 1; // Each market adds 1 point per lime
         }
-        
-        // If this is the currently selected seed, highlight it
-        if (gameState.selectedSeed === plantId) {
-            seedItem.classList.add('selected');
-        }
-        
-        const plantImg = document.createElement('img');
-        plantImg.src = plant.image;
-        plantImg.alt = plant.name;
-        plantImg.className = 'item-icon';
-        
-        const plantName = document.createElement('div');
-        plantName.className = 'item-name';
-        plantName.textContent = isUnlocked ? plant.name : '???';
-        
-        seedItem.appendChild(plantImg);
-        seedItem.appendChild(plantName);
-        
-        // Add event listener for selecting this seed (only if unlocked)
-        seedItem.addEventListener('click', () => {
-            // Only allow selection if unlocked and affordable
-            if (isUnlocked && plant.price <= gameState.points) {
-                selectSeed(plantId);
-            }
-        });
-        
-        // Hover events for showing information (only for unlocked seeds)
-        if (isUnlocked) {
-            seedItem.addEventListener('mouseenter', () => {
-                showTooltip(
-                    plant.name,
-                    plant.description,
-                    `Price: ${formatNumber(plant.price)} points`,
-                    seedItem
-                );
-            });
-            
-            seedItem.addEventListener('mouseleave', () => {
-                hideTooltip();
-            });
-        }
-        
-        seedGrid.appendChild(seedItem);
     }
-}
-
-// Create the upgrade menu (placeholder for now)
-function createUpgradeMenu() {
-    upgradesGrid.innerHTML = '';
-    // We'll implement this later
+    
+    const limesToCollect = plant.limes;
+    const pointsToAdd = limesToCollect * pointsPerLime;
+    gameState.points += pointsToAdd;
+    plant.limes = 0;
+    
+    // Show notification
+    showNotification(`Collected ${formatNumber(limesToCollect)} limes for ${formatNumber(pointsToAdd)} points!`);
+    
+    // Play sound effect
+    playSFX('click');
+    
+    // Update UI
+    createGardenGrid();
+    updateUI();
 }
 
 // Handle clicking on a garden tile
@@ -441,14 +422,7 @@ function handleTileClick(tileIndex) {
         
         // If this is a basket, collect the limes
         if (plant.type === 'basket' && plant.limes && plant.limes > 0) {
-            const limesToCollect = plant.limes;
-            const pointsToAdd = limesToCollect * 5; // Changed from 10 to 5 points per lime
-            gameState.points += pointsToAdd;
-            plant.limes = 0;
-            showNotification(`Collected ${formatNumber(limesToCollect)} limes for ${formatNumber(pointsToAdd)} points!`);
-            playSFX('click');
-            createGardenGrid();
-            updateUI();
+            collectLimesFromBasket(tileIndex);
             return;
         }
         
@@ -655,6 +629,79 @@ function updateTooltip() {
         
         // For seed items, we don't need to update as the prices don't change during hover
     }
+}
+
+// Create the seed menu
+function createSeedMenu() {
+    seedGrid.innerHTML = '';
+    
+    // Add all plants to the menu (not just unlocked ones)
+    for (const plantId in plantTypes) {
+        const plant = plantTypes[plantId];
+        const isUnlocked = gameState.unlocked[plantId];
+        
+        const seedItem = document.createElement('div');
+        seedItem.className = 'seed-item';
+        seedItem.dataset.plantId = plantId;
+        
+        // Apply the appropriate class based on unlock status
+        if (!isUnlocked) {
+            seedItem.classList.add('locked');
+        } else if (plant.price <= gameState.points) {
+            seedItem.classList.add('affordable');
+        } else {
+            seedItem.classList.add('not-affordable');
+        }
+        
+        // If this is the currently selected seed, highlight it
+        if (gameState.selectedSeed === plantId) {
+            seedItem.classList.add('selected');
+        }
+        
+        const plantImg = document.createElement('img');
+        plantImg.src = plant.image;
+        plantImg.alt = plant.name;
+        plantImg.className = 'item-icon';
+        
+        const plantName = document.createElement('div');
+        plantName.className = 'item-name';
+        plantName.textContent = isUnlocked ? plant.name : '???';
+        
+        seedItem.appendChild(plantImg);
+        seedItem.appendChild(plantName);
+        
+        // Add event listener for selecting this seed (only if unlocked)
+        seedItem.addEventListener('click', () => {
+            // Only allow selection if unlocked and affordable
+            if (isUnlocked && plant.price <= gameState.points) {
+                selectSeed(plantId);
+            }
+        });
+        
+        // Hover events for showing information (only for unlocked seeds)
+        if (isUnlocked) {
+            seedItem.addEventListener('mouseenter', () => {
+                showTooltip(
+                    plant.name,
+                    plant.description,
+                    `Price: ${formatNumber(plant.price)} points`,
+                    seedItem
+                );
+            });
+            
+            seedItem.addEventListener('mouseleave', () => {
+                hideTooltip();
+            });
+        }
+        
+        seedGrid.appendChild(seedItem);
+    }
+}
+
+// Create the upgrade menu (placeholder for now)
+function createUpgradeMenu() {
+    upgradesGrid.innerHTML = '';
+    // We'll implement this later
 }
 
 // Start the game when the page loads
