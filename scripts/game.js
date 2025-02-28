@@ -163,7 +163,7 @@ function calculatePointsPerSecond() {
         const plant = gameState.gardenGrid[i];
         if (plant) {
             // Base points for the plant
-            let plantPoints = plantTypes[plant.type].basePointsPerSecond;
+            let plantPoints = itemTypes[plant.type].basePointsPerSecond;
             
             // Special effect for ponds - boost adjacent lime plants
             if (plant.type === 'pond') {
@@ -190,10 +190,10 @@ function calculatePointsPerSecond() {
                 // Initialize limes property if it doesn't exist
                 if (!plant.limes) plant.limes = 0;
                 
-                const wasBeforeMax = plant.limes < plantTypes.basket.maxLimes;
+                const wasBeforeMax = plant.limes < itemTypes.basket.maxLimes;
                 
                 // Add limes up to the maximum
-                const maxLimes = plantTypes.basket.maxLimes;
+                const maxLimes = itemTypes.basket.maxLimes;
                 const newLimeCount = Math.min(plant.limes + limesCollected, maxLimes);
                 plant.limes = newLimeCount;
                 
@@ -232,15 +232,15 @@ function checkUnlocks() {
     let newlyUnlocked = [];
     
     // Check each plant type for potential unlocks
-    for (const plantId in plantTypes) {
+    for (const plantId in itemTypes) {
         // Skip items that are already unlocked
         if (gameState.unlocked[plantId]) continue;
         
         // Use price as the unlock condition
-        if (gameState.points >= plantTypes[plantId].price) {
+        if (gameState.points >= itemTypes[plantId].price) {
             gameState.unlocked[plantId] = true;
             unlockHappened = true;
-            newlyUnlocked.push(plantTypes[plantId].name);
+            newlyUnlocked.push(itemTypes[plantId].name);
         }
     }
     
@@ -270,12 +270,12 @@ function createGardenGrid() {
             tile.classList.add('occupied');
             
             const plantImg = document.createElement('img');
-            plantImg.src = plantTypes[plant.type].image;
-            plantImg.alt = plantTypes[plant.type].name;
+            plantImg.src = itemTypes[plant.type].image;
+            plantImg.alt = itemTypes[plant.type].name;
             plantImg.className = 'item-icon';
             
             // For baskets, show visual indication when full
-            if (plant.type === 'basket' && plant.limes >= plantTypes.basket.maxLimes) {
+            if (plant.type === 'basket' && plant.limes >= itemTypes.basket.maxLimes) {
                 tile.classList.add('basket-full');
             }
             
@@ -435,7 +435,7 @@ function handleTileClick(tileIndex) {
     if (!gameState.selectedSeed) return;
     
     // Check if we can afford the plant
-    const selectedPlant = plantTypes[gameState.selectedSeed];
+    const selectedPlant = itemTypes[gameState.selectedSeed];
     if (gameState.points < selectedPlant.price) return;
     
     // Place the plant
@@ -467,13 +467,13 @@ function handleTileRightClick(tileIndex) {
     const plantType = gameState.gardenGrid[tileIndex].type;
     
     // Refund the full price of the plant
-    if (plantType && plantTypes[plantType]) {
-        const refundAmount = plantTypes[plantType].price;
+    if (plantType && itemTypes[plantType]) {
+        const refundAmount = itemTypes[plantType].price;
         gameState.points += refundAmount;
         
         // Show notification about the refund if it's not a free item
         if (refundAmount > 0) {
-            showNotification(`Removed ${plantTypes[plantType].name} and refunded ${formatNumber(refundAmount)} points.`);
+            showNotification(`Removed ${itemTypes[plantType].name} and refunded ${formatNumber(refundAmount)} points.`);
         }
     }
     
@@ -717,9 +717,9 @@ function createSeedMenu() {
     let nextItemToUnlock = null;
     let lowestUnlockPoints = Infinity;
     
-    for (const plantId in plantTypes) {
+    for (const plantId in itemTypes) {
         if (!gameState.unlocked[plantId]) {
-            const unlockPoints = plantTypes[plantId].price;
+            const unlockPoints = itemTypes[plantId].price;
             if (unlockPoints < lowestUnlockPoints) {
                 lowestUnlockPoints = unlockPoints;
                 nextItemToUnlock = plantId;
@@ -728,8 +728,8 @@ function createSeedMenu() {
     }
     
     // Add all plants to the menu (not just unlocked ones)
-    for (const plantId in plantTypes) {
-        const plant = plantTypes[plantId];
+    for (const plantId in itemTypes) {
+        const plant = itemTypes[plantId];
         const isUnlocked = gameState.unlocked[plantId];
         
         const seedItem = document.createElement('div');
@@ -778,7 +778,8 @@ function createSeedMenu() {
                     plant.name,
                     plant.description,
                     `Price: ${formatNumber(plant.price)} points`,
-                    seedItem
+                    seedItem,
+                    plant.flavorText
                 );
             });
         } else if (plantId === nextItemToUnlock) {

@@ -66,13 +66,14 @@ function getAdjacentTiles(index) {
 }
 
 // Show tooltip
-function showTooltip(title, description, price, targetElement) {
+function showTooltip(title, description, price, targetElement, flavorText) {
     const rect = targetElement.getBoundingClientRect();
     
     // Set tooltip content
     tooltip.innerHTML = `
         <div class="tooltip-title">${title}</div>
         <div class="tooltip-description">${description}</div>
+        ${flavorText ? `<div class="tooltip-flavor">${flavorText}</div>` : ''}
         ${price ? `<div class="tooltip-price">${price}</div>` : ''}
     `;
     
@@ -273,7 +274,8 @@ function displayPlantTooltip(tileIndex, plant, targetElement) {
         plantType.name,
         description,
         extraInfo,
-        targetElement
+        targetElement,
+        plantType.flavorText
     );
 }
 

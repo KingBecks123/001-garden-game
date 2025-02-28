@@ -374,6 +374,15 @@ body.dark-mode::after {
     color: #666;
 }
 
+.tooltip-flavor {
+    font-style: italic;
+    color: #888;
+    margin-top: 6px;
+    font-size: 0.95em;
+    border-left: 2px solid #ddd;
+    padding-left: 8px;
+}
+
 .tooltip-price {
     margin-top: 5px;
     font-weight: bold;
@@ -534,6 +543,11 @@ body.dark-mode .tooltip-title {
 
 body.dark-mode .tooltip-description {
     color: #ccc;
+}
+
+body.dark-mode .tooltip-flavor {
+    color: #aaa;
+    border-left: 2px solid #555;
 }
 
 body.dark-mode .tooltip-price {
