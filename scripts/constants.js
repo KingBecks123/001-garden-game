@@ -3,7 +3,7 @@ const plantTypes = {
     limeBush: {
         id: 'limeBush',
         name: 'Lime Bush',
-        description: 'Earns 1 point / second',
+        description: 'Earn 1 point / second from falling limmes :)',
         price: 0,
         basePointsPerSecond: 1,
         image: 'images/lime-bush.svg'
@@ -11,7 +11,7 @@ const plantTypes = {
     limeTree: {
         id: 'limeTree',
         name: 'Lime Tree',
-        description: 'Earns 3 points / second',
+        description: 'Earns 3 points / second. Trees are just big bushes.',
         price: 100,
         basePointsPerSecond: 3,
         image: 'images/lime-tree.svg'
@@ -19,7 +19,7 @@ const plantTypes = {
     pond: {
         id: 'pond',
         name: 'Pond',
-        description: 'When placed next to a lime plant, that plant produces +1 point / second',
+        description: 'When placed next to a lime plant, that plant produces +1 point / second. Hydrate your plants!',
         price: 1000,
         basePointsPerSecond: 0,
         image: 'images/pond.svg'
@@ -27,7 +27,7 @@ const plantTypes = {
     basket: {
         id: 'basket',
         name: 'Basket',
-        description: 'When placed next to a lime tree, collects 1 lime per second per adjacent tree. Hover over to collect all limes. Each lime gives +5 points. Maximum of 100 limes.',
+        description: 'Collects 1 lime / second for each adjacent tree. Hover over to collect all limes. Each lime gives +5 points. Maximum of 100 limes.',
         price: 5000,
         basePointsPerSecond: 0,
         maxLimes: 100,
@@ -36,7 +36,7 @@ const plantTypes = {
     market: {
         id: 'market',
         name: 'Market',
-        description: 'When placed next to a basket, increases the points per lime by 1.',
+        description: 'Increases the points per lime of adjacent baskets by 1. Markets are just big baskets.',
         price: 10000,
         basePointsPerSecond: 0,
         image: 'images/market.svg'
@@ -44,7 +44,7 @@ const plantTypes = {
     billboard: {
         id: 'billboard',
         name: 'Billboard',
-        description: 'Advertise your limes! When placed in the same row or column as a market, increases that market\'s basket boost by 1.',
+        description: 'When placed in the same row or column as a market, increases that market\'s basket boost by 1. Capitalism is just big markets.',
         price: 20000,
         basePointsPerSecond: 0,
         image: 'images/billboard.svg'

@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Garden Game</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles/styles.css">
 </head>
 <body>
     <div class="game-container">
         <!-- Point Bar -->
         <div class="point-bar">
-            <div class="game-title">Sublime Universe #001: Garden Game</div>
+            <div class="game-title">Sublime Universe #001: The Garden</div>
             <div class="points-display">
                 <div id="points">0</div>
-                <div class="win-condition">Reach 1,000,000 to win!</div>
+                <div class="win-condition">Reach 1,000,000 points to 'win'!</div>
             </div>
         </div>
         
@@ -22,7 +22,7 @@
         <div class="game-area">
             <!-- Seed Menu -->
             <div class="seed-menu">
-                <h2>Items</h2>
+                <h2>Shed</h2>
                 <div class="menu-grid" id="seed-grid">
                     <!-- Items will be generated here -->
                 </div>
@@ -30,7 +30,7 @@
             
             <!-- Garden Grid -->
             <div class="garden-container">
-                <h2>Garden</h2>
+                <h2>The Garden</h2>
                 <div class="garden-grid" id="garden-grid">
                     <!-- Garden tiles will be generated here -->
                 </div>
@@ -39,7 +39,7 @@
             
             <!-- Upgrades Menu -->
             <div class="upgrades-menu">
-                <h2>Upgrades</h2>
+                <h2>Workshop</h2>
                 <div class="menu-grid" id="upgrades-grid">
                     <!-- Upgrades will be generated here -->
                 </div>
@@ -60,8 +60,8 @@
     <div id="tooltip" class="tooltip"></div>
     
     <!-- JavaScript Files -->
-    <script src="constants.js"></script>
-    <script src="utilities.js"></script>
-    <script src="game.js"></script>
+    <script src="scripts/constants.js"></script>
+    <script src="scripts/utilities.js"></script>
+    <script src="scripts/game.js"></script>
 </body>
 </html> 
