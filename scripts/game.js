@@ -23,6 +23,7 @@ let playerPreferences = {
     mutedMusic: false,
     mutedSFX: false,
     darkMode: false,
+    usePixelArt: true, // true for PNG, false for SVG
     lastSave: Date.now()
 };
 
@@ -50,6 +51,7 @@ function initGame() {
     // Force theme button update after DOM is ready
     setTimeout(() => {
         applyTheme();
+        applyImageType();
     }, 0);
     
     createGardenGrid();
@@ -100,6 +102,46 @@ function applyTheme() {
         themeToggle.textContent = 'D';
         themeToggle.title = 'Switch to Dark Mode';
     }
+}
+
+// Apply the current image type based on preferences
+function applyImageType() {
+    // Update button appearance with icon instead of text
+    const imageToggleBtn = document.getElementById('image-toggle');
+    if (imageToggleBtn) {
+        // Clear any existing content
+        imageToggleBtn.innerHTML = '';
+        
+        // Create lime icon - use the icon representing the CURRENT mode
+        const iconImg = document.createElement('img');
+        
+        // Use the icon matching the current mode (showing what's CURRENTLY active)
+        iconImg.src = playerPreferences.usePixelArt ? 
+            'images/PNGs/toggle-lime.png' : // Show PNG icon when in PNG mode
+            'images/SVGs/toggle-lime.svg';  // Show SVG icon when in SVG mode
+            
+        iconImg.alt = 'Toggle image type';
+        iconImg.style.width = '18px';
+        iconImg.style.height = '18px';
+        
+        // Add icon to button
+        imageToggleBtn.appendChild(iconImg);
+        
+        // Update tooltip
+        imageToggleBtn.title = playerPreferences.usePixelArt ? 'Switch to SVG images' : 'Switch to Pixel Art images';
+    }
+    
+    // Update image paths for all plants in the garden
+    updateAllPlantImages();
+}
+
+// Update all plant images in the garden to match current preference
+function updateAllPlantImages() {
+    // First update any plants in the garden
+    createGardenGrid();
+    
+    // Then update the seed menu
+    createSeedMenu();
 }
 
 // Game loop - runs every second
@@ -543,6 +585,33 @@ function setupEventListeners() {
         savePreferences();
     });
     
+    // Image type toggle button
+    const imageToggle = document.getElementById('image-toggle');
+    if (imageToggle) {
+        imageToggle.addEventListener('click', () => {
+            playerPreferences.usePixelArt = !playerPreferences.usePixelArt;
+            applyImageType();
+            playSFX('click');
+            savePreferences();
+        });
+        
+        // Tooltip for image toggle
+        imageToggle.addEventListener('mouseenter', () => {
+            showTooltip(
+                "Image Type",
+                playerPreferences.usePixelArt ? 
+                    "Currently using Pixel Art (PNG). Click to switch to SVG." : 
+                    "Currently using SVG. Click to switch to Pixel Art (PNG).",
+                null,
+                imageToggle
+            );
+        });
+        
+        imageToggle.addEventListener('mouseleave', () => {
+            hideTooltip();
+        });
+    }
+    
     // Theme toggle tooltip
     themeToggle.addEventListener('mouseenter', () => {
         showTooltip(
@@ -562,11 +631,11 @@ function setupEventListeners() {
     // Info button tooltip
     infoButton.addEventListener('mouseenter', () => {
         const controlsInfo = `
-            • Click an item in the menu to select it<br>
-            • Click a garden tile to place the selected item<br>
-            • Right-click to remove an item<br>
-            • Shift + drag (left click) to place multiple items<br>
-            • Hover over special items to collect resources
+            • <b>Click an item</b> in the menu to select it<br>
+            • <b>Click a garden tile</b> to place the selected item<br>
+            • <b>Right-click</b> to remove an item<br>
+            • <b>Shift + drag</b> (left click) to place multiple items<br>
+            • <b>Hover over special items</b> to collect resources
         `;
         
         showTooltip(

@@ -6,7 +6,11 @@ const plantTypes = {
         description: 'Earn 1 point / second from falling limmes :)',
         price: 0,
         basePointsPerSecond: 1,
-        image: 'images/lime-bush.svg'
+        imagePNG: 'images/PNGs/lime-bush.png',
+        imageSVG: 'images/SVGs/lime-bush.svg',
+        get image() {
+            return playerPreferences.usePixelArt ? this.imagePNG : this.imageSVG;
+        }
     },
     limeTree: {
         id: 'limeTree',
@@ -14,7 +18,11 @@ const plantTypes = {
         description: 'Earns 3 points / second. Trees are just big bushes.',
         price: 100,
         basePointsPerSecond: 3,
-        image: 'images/lime-tree.svg'
+        imagePNG: 'images/PNGs/lime-tree.png',
+        imageSVG: 'images/SVGs/lime-tree.svg',
+        get image() {
+            return playerPreferences.usePixelArt ? this.imagePNG : this.imageSVG;
+        }
     },
     pond: {
         id: 'pond',
@@ -22,7 +30,11 @@ const plantTypes = {
         description: 'When placed next to a lime plant, that plant produces +1 point / second. Hydrate your plants!',
         price: 1000,
         basePointsPerSecond: 0,
-        image: 'images/pond.svg'
+        imagePNG: 'images/PNGs/pond.png',
+        imageSVG: 'images/SVGs/pond.svg',
+        get image() {
+            return playerPreferences.usePixelArt ? this.imagePNG : this.imageSVG;
+        }
     },
     basket: {
         id: 'basket',
@@ -31,7 +43,11 @@ const plantTypes = {
         price: 5000,
         basePointsPerSecond: 0,
         maxLimes: 100,
-        image: 'images/basket.svg'
+        imagePNG: 'images/PNGs/basket.png',
+        imageSVG: 'images/SVGs/basket.svg',
+        get image() {
+            return playerPreferences.usePixelArt ? this.imagePNG : this.imageSVG;
+        }
     },
     market: {
         id: 'market',
@@ -39,7 +55,11 @@ const plantTypes = {
         description: 'Increases the points per lime of adjacent baskets by 1. Markets are just big baskets.',
         price: 10000,
         basePointsPerSecond: 0,
-        image: 'images/market.svg'
+        imagePNG: 'images/PNGs/market.png',
+        imageSVG: 'images/SVGs/market.svg',
+        get image() {
+            return playerPreferences.usePixelArt ? this.imagePNG : this.imageSVG;
+        }
     },
     billboard: {
         id: 'billboard',
@@ -47,7 +67,11 @@ const plantTypes = {
         description: 'When placed in the same row or column as a market, increases that market\'s basket boost by 1. Capitalism is just big markets.',
         price: 20000,
         basePointsPerSecond: 0,
-        image: 'images/billboard.svg'
+        imagePNG: 'images/PNGs/billboard.png',
+        imageSVG: 'images/SVGs/billboard.svg',
+        get image() {
+            return playerPreferences.usePixelArt ? this.imagePNG : this.imageSVG;
+        }
     }
 };
 

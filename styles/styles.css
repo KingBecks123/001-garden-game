@@ -29,6 +29,73 @@ body {
     justify-content: center;
     align-items: center;
     padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Add sunlight/moonlight effect */
+body::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: 
+        radial-gradient(ellipse at 10% -10%, rgba(255, 253, 177, 0.1) 0%, rgba(255, 253, 177, 0) 60%),
+        radial-gradient(ellipse at 100% 0%, rgba(255, 250, 157, 0.15) 0%, rgba(255, 250, 157, 0) 60%),
+        conic-gradient(from 215deg at 95% 0%, rgba(255, 227, 92, 0.12) 0%, rgba(255, 227, 92, 0) 25%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Moonlight effect for dark mode with stars */
+body.dark-mode::before {
+    background: 
+        radial-gradient(ellipse at 10% -10%, rgba(77, 101, 168, 0.1) 0%, rgba(77, 101, 168, 0) 60%),
+        radial-gradient(ellipse at 100% 0%, rgba(120, 150, 255, 0.12) 0%, rgba(120, 150, 255, 0) 60%),
+        conic-gradient(from 215deg at 95% 0%, rgba(150, 180, 255, 0.1) 0%, rgba(150, 180, 255, 0) 25%);
+}
+
+/* Stars in dark mode */
+body.dark-mode::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(1px 1px at 50px 20px, #fff, transparent),
+        radial-gradient(1px 1px at 100px 80px, #fff, transparent),
+        radial-gradient(1px 1px at 150px 40px, #fff, transparent),
+        radial-gradient(1px 1px at 200px 120px, #fff, transparent),
+        radial-gradient(1px 1px at 250px 30px, #fff, transparent),
+        radial-gradient(1px 1px at 300px 90px, #fff, transparent),
+        radial-gradient(1px 1px at 350px 50px, #fff, transparent),
+        radial-gradient(1px 1px at 400px 150px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 450px 70px, #fff, transparent),
+        radial-gradient(1px 1px at 500px 100px, #fff, transparent),
+        radial-gradient(1px 1px at 50px 200px, #fff, transparent),
+        radial-gradient(1px 1px at 150px 230px, #fff, transparent),
+        radial-gradient(1px 1px at 250px 250px, #fff, transparent),
+        radial-gradient(1px 1px at 150px 350px, #fff, transparent),
+        radial-gradient(1px 1px at 550px 150px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 650px 50px, #fff, transparent),
+        radial-gradient(1px 1px at 690px 300px, #fff, transparent),
+        radial-gradient(1px 1px at 750px 200px, #fff, transparent),
+        radial-gradient(1px 1px at 800px 250px, #fff, transparent),
+        radial-gradient(1px 1px at 850px 180px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 50px 320px, #fff, transparent),
+        radial-gradient(1px 1px at 180px 400px, #fff, transparent),
+        radial-gradient(1px 1px at 950px 450px, #fff, transparent);
+    opacity: 0.3;
+    z-index: -1;
+}
+
+@keyframes subtle-float {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(-30px, 30px); }
 }
 
 .game-container {
@@ -148,15 +215,22 @@ body {
     align-items: center;
     cursor: pointer;
     transition: all 0.2s ease;
+    position: relative;
 }
 
 .garden-tile:hover {
     background-color: #f0f8ff;
     transform: scale(1.05);
+    z-index: 5;
 }
 
 .garden-tile.occupied {
     border-style: solid;
+}
+
+.garden-tile.occupied:not(.basket-full) {
+    background-color: #f8f8f8;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .garden-tile.basket-full {
@@ -171,6 +245,16 @@ body {
     100% { transform: scale(1); }
 }
 
+.garden-tile .item-icon {
+    width: 45px;
+    height: 45px;
+    transition: transform 0.2s ease;
+}
+
+.garden-tile:hover .item-icon {
+    transform: translateY(-2px);
+}
+
 /* Seed and Upgrade Items */
 .seed-item, .upgrade-item {
     background-color: white;
@@ -182,10 +266,19 @@ body {
     align-items: center;
     cursor: pointer;
     transition: all 0.2s ease;
+    position: relative;
 }
 
 .seed-item:hover, .upgrade-item:hover {
     transform: scale(1.05);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+/* Highlight selected seed with a glow */
+.seed-item.selected {
+    box-shadow: 0 0 8px rgba(58, 200, 132, 0.7);
+    border-color: #3ac884;
 }
 
 .seed-item.affordable, .upgrade-item.affordable {
@@ -198,8 +291,7 @@ body {
 
 .seed-item.locked {
     background-color: #e0e0e0;
-    cursor: default;
-    border-color: #bbbbbb;
+    opacity: 0.8;
 }
 
 .seed-item.locked:hover {
@@ -215,14 +307,19 @@ body {
     color: #888;
 }
 
-.seed-item.selected {
-    box-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
-}
-
 .item-icon {
     width: 40px;
     height: 40px;
     object-fit: contain;
+    /* Ensure pixel art rendering is crisp */
+    image-rendering: pixelated;             /* Chrome, Edge, Safari */
+    image-rendering: crisp-edges;           /* Firefox */
+    image-rendering: -moz-crisp-edges;      /* Firefox legacy */
+    image-rendering: -webkit-optimize-contrast; /* Older browsers */
+    /* Add a subtle shadow for depth */
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+    /* Prevent blurry edges when transformed */
+    transform: translateZ(0);
 }
 
 .item-name {
@@ -363,16 +460,24 @@ body.dark-mode .upgrades-menu {
 }
 
 body.dark-mode .garden-grid {
-    background-color: #2a2a3a;
+    background-color: #1d1d28;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
 body.dark-mode .garden-tile {
-    background-color: #333;
+    background-color: #222;
     border: 1px solid #444;
+    color: #eee;
 }
 
 body.dark-mode .garden-tile:hover {
-    background-color: #3a3a4a;
+    background-color: #2a2a2a;
+}
+
+body.dark-mode .garden-tile.occupied {
+    background-color: #272730;
+    border-color: #555;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
 }
 
 body.dark-mode .garden-tile.basket-full {
@@ -391,12 +496,14 @@ body.dark-mode .seed-item.affordable,
 body.dark-mode .upgrade-item.affordable {
     background-color: #2a3a2a;
     border: 1px solid #3c5c3c;
+    color: #eee;
 }
 
 body.dark-mode .seed-item.not-affordable,
 body.dark-mode .upgrade-item.not-affordable {
     background-color: #3a2a2a;
     border: 1px solid #5c3c3c;
+    color: #eee;
 }
 
 body.dark-mode .seed-item.locked {
@@ -407,6 +514,10 @@ body.dark-mode .seed-item.locked {
 body.dark-mode .seed-item.selected {
     border: 2px solid #6c8;
     box-shadow: 0 0 10px rgba(80, 200, 120, 0.3);
+}
+
+body.dark-mode .seed-item.locked .item-name {
+    color: #eee;
 }
 
 body.dark-mode .tooltip {
@@ -450,4 +561,47 @@ body.dark-mode .settings button:hover {
 
 body.dark-mode #notification {
     background-color: rgba(60, 120, 80, 0.9);
+}
+
+/* Version label */
+.version-label {
+    position: absolute;
+    bottom: 10px;
+    right: 20px;
+    font-size: 12px;
+    color: #888;
+    opacity: 0.8;
+    font-style: italic;
+}
+
+body.dark-mode .version-label {
+    color: #aaa;
+}
+
+/* Image toggle button - P for PNG, S for SVG */
+#image-toggle {
+    background-color: #6c8ea4 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    overflow: hidden;
+    padding: 6px !important;
+}
+
+#image-toggle:hover {
+    background-color: #5a7c94 !important;
+}
+
+#image-toggle img {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.2s ease;
+}
+
+#image-toggle:hover img {
+    transform: scale(1.15);
+}
+
+body.dark-mode .seed-item .item-name {
+    color: #eee;
 } 

@@ -1,0 +1,20 @@
+<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+  <!-- Lime Outer -->
+  <circle cx="25" cy="25" r="20" fill="#8cbe3f" />
+  
+  <!-- Lime highlight -->
+  <circle cx="18" cy="18" r="15" fill="#a1d251" opacity="0.6" />
+  
+  <!-- Lime sections/segments -->
+  <path d="M25 5 A20 20 0 0 1 45 25 L25 25 Z" fill="#78a934" opacity="0.7" />
+  <path d="M25 5 A20 20 0 0 0 5 25 L25 25 Z" fill="#a1d251" opacity="0.3" />
+  <path d="M25 45 A20 20 0 0 1 45 25 L25 25 Z" fill="#6b9c29" opacity="0.6" />
+  <path d="M25 45 A20 20 0 0 0 5 25 L25 25 Z" fill="#78a934" opacity="0.5" />
+  
+  <!-- Small stem -->
+  <path d="M26 6 Q28 4 30 5 L28 9 Q26 8 26 6 Z" fill="#5e7c28" />
+  
+  <!-- Lime shine/highlight -->
+  <circle cx="18" cy="18" r="3" fill="white" opacity="0.6" />
+  <circle cx="15" cy="15" r="1.5" fill="white" opacity="0.8" />
+</svg> 

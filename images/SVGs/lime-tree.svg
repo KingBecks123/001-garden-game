@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <!-- Tree trunk -->
+  <rect x="18" y="25" width="4" height="10" fill="#a56f3c"/>
+  
+  <!-- Tree foliage -->
+  <path d="M20,5 L30,20 L25,20 L33,30 L7,30 L15,20 L10,20 Z" fill="#5cb860"/>
+  
+  <!-- Limes -->
+  <circle cx="15" cy="22" r="3" fill="#c7e44f"/>
+  <circle cx="25" cy="25" r="3" fill="#c7e44f"/>
+  <circle cx="22" cy="17" r="2.5" fill="#c7e44f"/>
+  <circle cx="18" cy="23" r="2" fill="#c7e44f"/>
+</svg> 
