@@ -10,16 +10,20 @@ let gameState = {
         limeTree: false,
         pond: false,
         basket: false,
-        market: false
+        market: false,
+        billboard: false
     },
     lastSave: Date.now(),
-    settings: {
-        mutedMusic: false,
-        mutedSFX: false,
-        darkMode: false
-    },
     isDragging: false,
     isRemoving: false
+};
+
+// Player preferences (separate from game state)
+let playerPreferences = {
+    mutedMusic: false,
+    mutedSFX: false,
+    darkMode: false,
+    lastSave: Date.now()
 };
 
 // DOM Elements
@@ -38,10 +42,16 @@ const pointsPerSecondDisplay = document.getElementById('points-per-second');
 // Initialize the game
 function initGame() {
     loadGame();
+    loadPreferences();
+    
+    // Update UI to match preferences
+    updatePreferencesUI();
+    
     // Force theme button update after DOM is ready
     setTimeout(() => {
         applyTheme();
     }, 0);
+    
     createGardenGrid();
     createSeedMenu();
     createUpgradeMenu();
@@ -52,7 +62,10 @@ function initGame() {
     setInterval(gameLoop, 1000);
     
     // Save the game every 2 seconds
-    setInterval(saveGame, 2000);
+    setInterval(() => {
+        saveGame();
+        savePreferences();
+    }, 2000);
     
     // Add mouse up event to stop dragging
     document.addEventListener('mouseup', () => {
@@ -61,9 +74,24 @@ function initGame() {
     });
 }
 
+// Update UI to match player preferences
+function updatePreferencesUI() {
+    // Update mute music button
+    if (muteMusic) {
+        muteMusic.textContent = playerPreferences.mutedMusic ? 'Unmute Music' : 'Mute Music';
+    }
+    
+    // Update mute SFX button
+    if (muteSFX) {
+        muteSFX.textContent = playerPreferences.mutedSFX ? 'Unmute SFX' : 'Mute SFX';
+    }
+    
+    // Theme is handled by applyTheme() separately
+}
+
 // Apply the current theme (light/dark)
 function applyTheme() {
-    if (gameState.settings.darkMode) {
+    if (playerPreferences.darkMode) {
         document.body.classList.add('dark-mode');
         themeToggle.textContent = 'L';
         themeToggle.title = 'Switch to Light Mode';
@@ -161,32 +189,17 @@ function checkUnlocks() {
     let unlockHappened = false;
     let newlyUnlocked = [];
     
-    // Check if we have enough points to unlock the Lime Tree
-    if (!gameState.unlocked.limeTree && gameState.points >= plantTypes.limeTree.unlockCondition) {
-        gameState.unlocked.limeTree = true;
-        unlockHappened = true;
-        newlyUnlocked.push(plantTypes.limeTree.name);
-    }
-    
-    // Check if we have enough points to unlock the Pond
-    if (!gameState.unlocked.pond && gameState.points >= plantTypes.pond.unlockCondition) {
-        gameState.unlocked.pond = true;
-        unlockHappened = true;
-        newlyUnlocked.push(plantTypes.pond.name);
-    }
-    
-    // Check if we have enough points to unlock the Basket
-    if (!gameState.unlocked.basket && gameState.points >= plantTypes.basket.unlockCondition) {
-        gameState.unlocked.basket = true;
-        unlockHappened = true;
-        newlyUnlocked.push(plantTypes.basket.name);
-    }
-    
-    // Check if we have enough points to unlock the Market
-    if (!gameState.unlocked.market && gameState.points >= plantTypes.market.unlockCondition) {
-        gameState.unlocked.market = true;
-        unlockHappened = true;
-        newlyUnlocked.push(plantTypes.market.name);
+    // Check each plant type for potential unlocks
+    for (const plantId in plantTypes) {
+        // Skip items that are already unlocked
+        if (gameState.unlocked[plantId]) continue;
+        
+        // Use price as the unlock condition
+        if (gameState.points >= plantTypes[plantId].price) {
+            gameState.unlocked[plantId] = true;
+            unlockHappened = true;
+            newlyUnlocked.push(plantTypes[plantId].name);
+        }
     }
     
     // Only refresh the seed menu if something was unlocked
@@ -289,21 +302,68 @@ function collectLimesFromBasket(tileIndex) {
     // Calculate points per lime (base of 5)
     let pointsPerLime = 5;
     
-    // Check for adjacent markets
+    // Check for adjacent markets and billboards
     const adjacentTiles = getAdjacentTiles(tileIndex);
+    let marketBoost = 0;
+    let marketCount = 0;
+    let billboardCount = 0;
+    
+    // First, check for adjacent markets
     for (const adjTile of adjacentTiles) {
         if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'market') {
-            pointsPerLime += 1; // Each market adds 1 point per lime
+            marketCount++;
+            
+            // Get market position
+            const marketTile = adjTile;
+            const marketRow = Math.floor(marketTile / 5);
+            const marketCol = marketTile % 5;
+            
+            // Base boost from market
+            let marketBoostValue = 1;
+            let marketBillboardCount = 0;
+            
+            // Check all tiles for billboards in the same row or column as this market
+            for (let i = 0; i < gameState.gardenGrid.length; i++) {
+                if (gameState.gardenGrid[i] && gameState.gardenGrid[i].type === 'billboard') {
+                    const billboardRow = Math.floor(i / 5);
+                    const billboardCol = i % 5;
+                    
+                    // If the billboard is in the same row or column as this market
+                    if (billboardRow === marketRow || billboardCol === marketCol) {
+                        marketBoostValue += 1; // Billboard increases market's boost by 1
+                        marketBillboardCount += 1;
+                        billboardCount += 1;
+                    }
+                }
+            }
+            
+            console.log(`Collecting: Market at tile ${adjTile} has ${marketBillboardCount} billboards in line. Boost: ${marketBoostValue}`);
+            
+            marketBoost += marketBoostValue; // Add the total market boost value
         }
     }
+    
+    // Add market boost to points per lime
+    pointsPerLime += marketBoost;
+    
+    console.log(`Collecting: Basket at tile ${tileIndex} has ${marketCount} markets nearby. Total boost: ${marketBoost}. Points per lime: ${pointsPerLime}`);
     
     const limesToCollect = plant.limes;
     const pointsToAdd = limesToCollect * pointsPerLime;
     gameState.points += pointsToAdd;
     plant.limes = 0;
     
-    // Show notification
-    showNotification(`Collected ${formatNumber(limesToCollect)} limes for ${formatNumber(pointsToAdd)} points!`);
+    // Show notification with detailed information
+    let notificationText = `Collected ${formatNumber(limesToCollect)} limes for ${formatNumber(pointsToAdd)} points!`;
+    if (marketBoost > 0) {
+        if (billboardCount > 0) {
+            notificationText += ` (${pointsPerLime} points each with market & billboard boosts)`;
+        } else {
+            notificationText += ` (${pointsPerLime} points each with market boost)`;
+        }
+    }
+    
+    showNotification(notificationText);
     
     // Play sound effect
     playSFX('click');
@@ -361,6 +421,20 @@ function handleTileRightClick(tileIndex) {
     // Check if there's a plant in this tile
     if (!gameState.gardenGrid[tileIndex]) return;
     
+    // Get the plant type that's being removed
+    const plantType = gameState.gardenGrid[tileIndex].type;
+    
+    // Refund the full price of the plant
+    if (plantType && plantTypes[plantType]) {
+        const refundAmount = plantTypes[plantType].price;
+        gameState.points += refundAmount;
+        
+        // Show notification about the refund if it's not a free item
+        if (refundAmount > 0) {
+            showNotification(`Removed ${plantTypes[plantType].name} and refunded ${formatNumber(refundAmount)} points.`);
+        }
+    }
+    
     // Remove the plant
     gameState.gardenGrid[tileIndex] = null;
     
@@ -403,19 +477,21 @@ function updateUI() {
 // Setup event listeners for settings
 function setupEventListeners() {
     muteMusic.addEventListener('click', () => {
-        gameState.settings.mutedMusic = !gameState.settings.mutedMusic;
-        muteMusic.textContent = gameState.settings.mutedMusic ? 'Unmute Music' : 'Mute Music';
+        playerPreferences.mutedMusic = !playerPreferences.mutedMusic;
+        muteMusic.textContent = playerPreferences.mutedMusic ? 'Unmute Music' : 'Mute Music';
         playSFX('click');
+        savePreferences();
     });
     
     muteSFX.addEventListener('click', () => {
-        gameState.settings.mutedSFX = !gameState.settings.mutedSFX;
-        muteSFX.textContent = gameState.settings.mutedSFX ? 'Unmute SFX' : 'Mute SFX';
+        playerPreferences.mutedSFX = !playerPreferences.mutedSFX;
+        muteSFX.textContent = playerPreferences.mutedSFX ? 'Unmute SFX' : 'Mute SFX';
         
         // Play a click sound if we're unmuting
-        if (!gameState.settings.mutedSFX) {
+        if (!playerPreferences.mutedSFX) {
             playSFX('click');
         }
+        savePreferences();
     });
     
     // Re-implement delete save with a direct approach
@@ -426,14 +502,30 @@ function setupEventListeners() {
         const freshDeleteSave = document.getElementById('delete-save');
         
         freshDeleteSave.addEventListener('click', () => {
-            if (confirm('Are you sure you want to delete your save and start over?')) {
+            if (confirm('Are you sure you want to delete your save and start over? Your preferences (dark mode, sound settings) will be kept.')) {
                 console.log('Deleting save...');
                 localStorage.removeItem('gardenGameSave');
                 playSFX('click');
                 
                 // Reset game state entirely using the default state
-                gameState = JSON.parse(JSON.stringify(defaultGameState));
-                gameState.lastSave = Date.now();
+                gameState = {
+                    points: 0,
+                    pointsPerSecond: 0,
+                    selectedSeed: null,
+                    plants: [],
+                    gardenGrid: Array(25).fill(null),
+                    unlocked: {
+                        limeBush: true,
+                        limeTree: false,
+                        pond: false,
+                        basket: false,
+                        market: false,
+                        billboard: false
+                    },
+                    lastSave: Date.now(),
+                    isDragging: false,
+                    isRemoving: false
+                };
                 
                 // Force full refresh
                 window.location.reload();
@@ -445,17 +537,17 @@ function setupEventListeners() {
     
     // Theme toggle button
     themeToggle.addEventListener('click', () => {
-        gameState.settings.darkMode = !gameState.settings.darkMode;
+        playerPreferences.darkMode = !playerPreferences.darkMode;
         applyTheme();
         playSFX('click');
-        saveGame();
+        savePreferences();
     });
     
     // Theme toggle tooltip
     themeToggle.addEventListener('mouseenter', () => {
         showTooltip(
             "Theme",
-            gameState.settings.darkMode ? 
+            playerPreferences.darkMode ? 
                 "Switch to light mode" : 
                 "Switch to dark mode",
             null,
@@ -500,12 +592,52 @@ function saveGame() {
 function loadGame() {
     const savedGame = localStorage.getItem('gardenGameSave');
     if (savedGame) {
-        gameState = JSON.parse(savedGame);
+        try {
+            const loadedState = JSON.parse(savedGame);
+            
+            // Apply loaded state to game state
+            gameState = loadedState;
+            
+            // Ensure we have all the necessary properties
+            if (!gameState.gardenGrid) gameState.gardenGrid = Array(25).fill(null);
+            if (!gameState.unlocked) {
+                gameState.unlocked = {
+                    limeBush: true,
+                    limeTree: false,
+                    pond: false,
+                    basket: false,
+                    market: false,
+                    billboard: false
+                };
+            }
+            
+            // Make sure limeBush is always unlocked
+            gameState.unlocked.limeBush = true;
+            
+            // Update lastSave
+            gameState.lastSave = Date.now();
+        } catch (e) {
+            console.error("Error loading save:", e);
+            gameState = JSON.parse(JSON.stringify(defaultGameState));
+        }
     } else {
         // Start a new game using the default state
         gameState = JSON.parse(JSON.stringify(defaultGameState));
         gameState.lastSave = Date.now();
     }
+}
+
+// Load preferences
+function loadPreferences() {
+    const savedPreferences = localStorage.getItem('gardenGamePreferences');
+    if (savedPreferences) {
+        playerPreferences = JSON.parse(savedPreferences);
+    }
+}
+
+// Save preferences
+function savePreferences() {
+    localStorage.setItem('gardenGamePreferences', JSON.stringify(playerPreferences));
 }
 
 // Create the seed menu
@@ -518,7 +650,7 @@ function createSeedMenu() {
     
     for (const plantId in plantTypes) {
         if (!gameState.unlocked[plantId]) {
-            const unlockPoints = plantTypes[plantId].unlockCondition;
+            const unlockPoints = plantTypes[plantId].price;
             if (unlockPoints < lowestUnlockPoints) {
                 lowestUnlockPoints = unlockPoints;
                 nextItemToUnlock = plantId;
@@ -586,7 +718,7 @@ function createSeedMenu() {
                 showTooltip(
                     "Locked Item",
                     "Reach the required points to unlock this item.",
-                    `Required: ${formatNumber(plant.unlockCondition)} points`,
+                    `Required: ${formatNumber(plant.price)} points`,
                     seedItem
                 );
             });

@@ -1,13 +1,44 @@
+// Track if user interaction has occurred
+let firstInteractionOccurred = false;
+
+// Register first interaction
+document.addEventListener('click', function() {
+    firstInteractionOccurred = true;
+}, { once: true });
+
 // Play a sound effect
 function playSFX(sfxName) {
-    if (!gameState.settings.mutedSFX && soundEffects[sfxName]) {
+    // Don't attempt to play if sound is muted in settings
+    if (playerPreferences.mutedSFX || !soundEffects[sfxName]) {
+        return;
+    }
+    
+    try {
         // Create a new audio element to allow overlapping sounds
         const sound = soundEffects[sfxName].cloneNode();
-        sound.volume = 0.5; // Adjust volume as needed
-        sound.play().catch(err => {
-            // Ignore errors - browser might block autoplay
-            console.log('Audio playback error:', err);
-        });
+        sound.volume = 0.5; // Set volume (will be used after successful play)
+        
+        // If this is the first interaction, we can just play normally
+        if (firstInteractionOccurred) {
+            sound.play();
+        } else {
+            // For sounds before first interaction, attempt to play muted first
+            sound.muted = true;
+            
+            // Try to play muted first (should work in most browsers)
+            sound.play()
+                .then(() => {
+                    // If successful, unmute (may or may not work depending on browser)
+                    sound.muted = false;
+                })
+                .catch(err => {
+                    // Just log the error silently - expected before interaction
+                    console.log('Sound could not autoplay:', err);
+                });
+        }
+    } catch (err) {
+        // Catch any other errors
+        console.log('Audio playback error:', err);
     }
 }
 
@@ -113,22 +144,121 @@ function displayPlantTooltip(tileIndex, plant, targetElement) {
             description += ` (includes +${pondBoost} from ponds)`;
         }
     }
+    // For markets, show billboard effect
+    else if (plant.type === 'market') {
+        // Get row and column of this market
+        const marketRow = Math.floor(tileIndex / 5);
+        const marketCol = tileIndex % 5;
+        let billboardCount = 0;
+        
+        // Check all tiles for billboards in the same row or column
+        for (let i = 0; i < gameState.gardenGrid.length; i++) {
+            if (gameState.gardenGrid[i] && gameState.gardenGrid[i].type === 'billboard') {
+                const billboardRow = Math.floor(i / 5);
+                const billboardCol = i % 5;
+                
+                // If the billboard is in the same row or column as this market
+                if (billboardRow === marketRow || billboardCol === marketCol) {
+                    billboardCount += 1;
+                }
+            }
+        }
+        
+        const marketBoost = 1 + billboardCount;
+        
+        // Debug info - check if billboards are detected
+        console.log(`Market at tile ${tileIndex} has ${billboardCount} billboards in line. Total boost: ${marketBoost}`);
+        
+        description = `When placed next to a basket, increases the points per lime by ${marketBoost}.`;
+        
+        if (billboardCount > 0) {
+            description += ` (enhanced by ${billboardCount} billboard${billboardCount > 1 ? 's' : ''} in the same row/column)`;
+        }
+    }
     // For baskets, update description to show market effects
     else if (plant.type === 'basket') {
         const adjacentTiles = getAdjacentTiles(tileIndex);
         let marketBoost = 0;
+        let marketCount = 0;
+        let billboardCount = 0;
         
+        // Check for adjacent markets
         for (const adjTile of adjacentTiles) {
             if (gameState.gardenGrid[adjTile] && gameState.gardenGrid[adjTile].type === 'market') {
-                marketBoost += 1;
+                marketCount++;
+                
+                // Get market position
+                const marketTile = adjTile;
+                const marketRow = Math.floor(marketTile / 5);
+                const marketCol = marketTile % 5;
+                
+                // Base boost from market
+                let marketBoostValue = 1;
+                let marketBillboardCount = 0;
+                
+                // Check all tiles for billboards in the same row or column as this market
+                for (let i = 0; i < gameState.gardenGrid.length; i++) {
+                    if (gameState.gardenGrid[i] && gameState.gardenGrid[i].type === 'billboard') {
+                        const billboardRow = Math.floor(i / 5);
+                        const billboardCol = i % 5;
+                        
+                        // If the billboard is in the same row or column as this market
+                        if (billboardRow === marketRow || billboardCol === marketCol) {
+                            marketBoostValue += 1; // Billboard increases market's boost by 1
+                            marketBillboardCount += 1;
+                            billboardCount += 1;
+                        }
+                    }
+                }
+                
+                // Debug info - check each market's boost calculation
+                console.log(`Market at tile ${adjTile} has ${marketBillboardCount} billboards in line. Boost: ${marketBoostValue}`);
+                
+                marketBoost += marketBoostValue; // Add the total market boost value
             }
         }
         
         const pointsPerLime = 5 + marketBoost;
+        
+        // Debug basket calculation
+        console.log(`Basket at tile ${tileIndex} has ${marketCount} markets nearby. Total boost: ${marketBoost}`);
+        
         description = `When placed next to a lime tree, collects 1 lime per second. Hover over to collect all limes. Each lime gives +${pointsPerLime} points. Maximum of ${formatNumber(plantTypes.basket.maxLimes)} limes.`;
         
         if (marketBoost > 0) {
-            description += ` (includes +${marketBoost} from markets)`;
+            if (billboardCount > 0) {
+                description += ` (includes +${marketCount} from ${marketCount > 1 ? 'markets' : 'market'} with ${billboardCount} billboard${billboardCount > 1 ? 's' : ''} boost)`;
+            } else {
+                description += ` (includes +${marketBoost} from ${marketCount > 1 ? 'markets' : 'market'})`;
+            }
+        }
+    }
+    // For billboards, show how they enhance nearby markets
+    else if (plant.type === 'billboard') {
+        // Get billboard position
+        const billboardRow = Math.floor(tileIndex / 5);
+        const billboardCol = tileIndex % 5;
+        let marketCount = 0;
+        
+        // Count markets in the same row or column
+        for (let i = 0; i < gameState.gardenGrid.length; i++) {
+            if (gameState.gardenGrid[i] && gameState.gardenGrid[i].type === 'market') {
+                const marketRow = Math.floor(i / 5);
+                const marketCol = i % 5;
+                
+                // If the market is in the same row or column as this billboard
+                if (marketRow === billboardRow || marketCol === billboardCol) {
+                    marketCount += 1;
+                }
+            }
+        }
+        
+        description = "Advertise your limes! Increases Market's basket boost by 1.";
+        
+        if (marketCount > 0) {
+            description += ` Currently boosting ${marketCount} market${marketCount > 1 ? 's' : ''} in this row/column.`;
+        } else {
+            description += ` (Not currently boosting any markets. Place in same row/column as markets for effect.)`;
         }
     }
     

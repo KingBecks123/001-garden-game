@@ -5,7 +5,6 @@ const plantTypes = {
         name: 'Lime Bush',
         description: 'Earns 1 point / second',
         price: 0,
-        unlockCondition: 0,
         basePointsPerSecond: 1,
         image: 'images/lime-bush.svg'
     },
@@ -13,8 +12,7 @@ const plantTypes = {
         id: 'limeTree',
         name: 'Lime Tree',
         description: 'Earns 3 points / second',
-        price: 50,
-        unlockCondition: 100,
+        price: 100,
         basePointsPerSecond: 3,
         image: 'images/lime-tree.svg'
     },
@@ -22,17 +20,15 @@ const plantTypes = {
         id: 'pond',
         name: 'Pond',
         description: 'When placed next to a lime plant, that plant produces +1 point / second',
-        price: 200,
-        unlockCondition: 1000,
+        price: 1000,
         basePointsPerSecond: 0,
         image: 'images/pond.svg'
     },
     basket: {
         id: 'basket',
         name: 'Basket',
-        description: 'When placed next to a lime tree, collects 1 lime per second. Hover over to collect all limes. Each lime gives +5 points. Maximum of 100 limes.',
-        price: 1000,
-        unlockCondition: 10000,
+        description: 'When placed next to a lime tree, collects 1 lime per second per adjacent tree. Hover over to collect all limes. Each lime gives +5 points. Maximum of 100 limes.',
+        price: 5000,
         basePointsPerSecond: 0,
         maxLimes: 100,
         image: 'images/basket.svg'
@@ -42,9 +38,16 @@ const plantTypes = {
         name: 'Market',
         description: 'When placed next to a basket, increases the points per lime by 1.',
         price: 10000,
-        unlockCondition: 20000,
         basePointsPerSecond: 0,
         image: 'images/market.svg'
+    },
+    billboard: {
+        id: 'billboard',
+        name: 'Billboard',
+        description: 'Advertise your limes! When placed in the same row or column as a market, increases that market\'s basket boost by 1.',
+        price: 20000,
+        basePointsPerSecond: 0,
+        image: 'images/billboard.svg'
     }
 };
 
@@ -72,14 +75,10 @@ const defaultGameState = {
         limeTree: false,
         pond: false,
         basket: false,
-        market: false
+        market: false,
+        billboard: false
     },
     lastSave: Date.now(),
-    settings: {
-        mutedMusic: false,
-        mutedSFX: false,
-        darkMode: false
-    },
     isDragging: false,
     isRemoving: false
 }; 
