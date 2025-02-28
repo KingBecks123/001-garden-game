@@ -107,4 +107,4 @@ const defaultGameState = {
     lastSave: Date.now(),
     isDragging: false,
     isRemoving: false
-}; 
+};

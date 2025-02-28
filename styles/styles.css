@@ -156,7 +156,7 @@ body.dark-mode::after {
 }
 
 /* Menus */
-.seed-menu, .upgrades-menu {
+.shed-menu, .upgrades-menu {
     flex: 1;
     background-color: var(--menu-bg);
     border-radius: 15px;
@@ -462,7 +462,7 @@ body.dark-mode .game-container {
 }
 
 body.dark-mode .point-bar,
-body.dark-mode .seed-menu,
+body.dark-mode .shed-menu,
 body.dark-mode .upgrades-menu {
     background-color: rgba(40, 40, 50, 0.9);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);

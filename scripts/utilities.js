@@ -122,7 +122,7 @@ function showNotification(message) {
 
 // Helper function to display plant tooltip - consolidates tooltip logic
 function displayPlantTooltip(tileIndex, plant, targetElement) {
-    const plantType = plantTypes[plant.type];
+    const plantType = itemTypes[plant.type];
     let description = plantType.description;
     
     // For plants that produce points, show actual points per second (including pond boosts)
@@ -224,7 +224,7 @@ function displayPlantTooltip(tileIndex, plant, targetElement) {
         // Debug basket calculation
         console.log(`Basket at tile ${tileIndex} has ${marketCount} markets nearby. Total boost: ${marketBoost}`);
         
-        description = `When placed next to a lime tree, collects 1 lime per second. Hover over to collect all limes. Each lime gives +${pointsPerLime} points. Maximum of ${formatNumber(plantTypes.basket.maxLimes)} limes.`;
+        description = `When placed next to a lime tree, collects 1 lime per second. Hover over to collect all limes. Each lime gives +${pointsPerLime} points. Maximum of ${formatNumber(itemTypes.basket.maxLimes)} limes.`;
         
         if (marketBoost > 0) {
             if (billboardCount > 0) {
@@ -267,7 +267,7 @@ function displayPlantTooltip(tileIndex, plant, targetElement) {
     let extraInfo = null;
     if (plant.type === 'basket') {
         if (!plant.limes) plant.limes = 0;
-        extraInfo = `Limes: ${formatNumber(plant.limes)}/${formatNumber(plantTypes.basket.maxLimes)}`;
+        extraInfo = `Limes: ${formatNumber(plant.limes)}/${formatNumber(itemTypes.basket.maxLimes)}`;
     }
     
     showTooltip(
@@ -275,7 +275,7 @@ function displayPlantTooltip(tileIndex, plant, targetElement) {
         description,
         extraInfo,
         targetElement,
-        plantType.flavorText
+        null  // Don't show flavor text in garden tooltips
     );
 }
 

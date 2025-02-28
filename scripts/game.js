@@ -29,7 +29,7 @@ let playerPreferences = {
 
 // DOM Elements
 const pointsDisplay = document.getElementById('points');
-const seedGrid = document.getElementById('seed-grid');
+const shedGrid = document.getElementById('shed-grid');
 const gardenGrid = document.getElementById('garden-grid');
 const upgradesGrid = document.getElementById('upgrades-grid');
 const tooltip = document.getElementById('tooltip');
@@ -55,7 +55,7 @@ function initGame() {
     }, 0);
     
     createGardenGrid();
-    createSeedMenu();
+    createShedMenu();
     createUpgradeMenu();
     updateUI();
     setupEventListeners();
@@ -140,8 +140,8 @@ function updateAllPlantImages() {
     // First update any plants in the garden
     createGardenGrid();
     
-    // Then update the seed menu
-    createSeedMenu();
+    // Then update the shed menu
+    createShedMenu();
 }
 
 // Game loop - runs every second
@@ -244,9 +244,9 @@ function checkUnlocks() {
         }
     }
     
-    // Only refresh the seed menu if something was unlocked
+    // Only refresh the shed menu if something was unlocked
     if (unlockHappened) {
-        createSeedMenu();
+        createShedMenu();
         
         // Show notification for newly unlocked plants
         newlyUnlocked.forEach(plantName => {
@@ -501,7 +501,7 @@ function selectSeed(plantId) {
     playSFX('click');
     
     // Update the UI
-    createSeedMenu();
+    createShedMenu();
 }
 
 // Update UI elements
@@ -512,8 +512,8 @@ function updateUI() {
     // Update points per second display
     pointsPerSecondDisplay.textContent = `${formatNumber(gameState.pointsPerSecond)} points/second`;
     
-    // Update seed menu affordability
-    createSeedMenu();
+    // Update shed menu affordability
+    createShedMenu();
 }
 
 // Setup event listeners for settings
@@ -709,9 +709,9 @@ function savePreferences() {
     localStorage.setItem('gardenGamePreferences', JSON.stringify(playerPreferences));
 }
 
-// Create the seed menu
-function createSeedMenu() {
-    seedGrid.innerHTML = '';
+// Create the shed menu
+function createShedMenu() {
+    shedGrid.innerHTML = '';
     
     // Determine the next item to unlock for tooltip hint
     let nextItemToUnlock = null;
@@ -798,7 +798,7 @@ function createSeedMenu() {
             hideTooltip();
         });
         
-        seedGrid.appendChild(seedItem);
+        shedGrid.appendChild(seedItem);
     }
 }
 
